@@ -341,3 +341,171 @@ poliglota(Persona):-
     findall(Idioma,habla(Persona,Idioma),Idiomas),
     length(Idiomas,X),
     X >= 3.
+
+% TEG!
+/* distintos paises */
+paisContinente(americaDelSur, argentina).
+paisContinente(americaDelSur, bolivia).
+paisContinente(americaDelSur, brasil).
+paisContinente(americaDelSur, chile).
+paisContinente(americaDelSur, ecuador).
+paisContinente(europa, alemania).
+paisContinente(europa, espania).
+paisContinente(europa, francia).
+paisContinente(europa, inglaterra).
+paisContinente(asia, aral).
+paisContinente(asia, china).
+paisContinente(asia, gobi).
+paisContinente(asia, india).
+paisContinente(asia, iran).
+
+/*países importantes*/
+paisImportante(argentina).
+paisImportante(kamchatka).
+paisImportante(alemania).
+
+/*países limítrofes*/
+limitrofes([argentina,brasil]).
+limitrofes([bolivia,brasil]).
+limitrofes([bolivia,argentina]).
+limitrofes([argentina,chile]).
+limitrofes([espania,francia]).
+limitrofes([alemania,francia]).
+limitrofes([nepal,india]).
+limitrofes([china,india]).
+limitrofes([nepal,china]).
+limitrofes([afganistan,china]).
+limitrofes([iran,afganistan]).
+
+/*distribución en el tablero */
+ocupa(argentina, azul, 4).
+ocupa(bolivia, rojo, 1).
+ocupa(brasil, verde, 4).
+ocupa(chile, negro, 3).
+ocupa(ecuador, rojo, 2).
+ocupa(alemania, azul, 3).
+ocupa(espania, azul, 1).
+ocupa(francia, azul, 1).
+ocupa(inglaterra, azul, 2). 
+ocupa(aral, negro, 2).
+ocupa(china, verde, 1).
+ocupa(gobi, verde, 2).
+ocupa(india, rojo, 3).
+ocupa(iran, verde, 1).
+
+/*continentes*/
+continente(americaDelSur).
+continente(europa).
+continente(asia).
+
+/*objetivos*/
+objetivo(rojo, ocuparContinente(asia)).
+objetivo(azul, ocuparPaises([argentina, bolivia, francia, inglaterra, china])).
+objetivo(verde, destruirJugador(rojo)).
+objetivo(negro, ocuparContinente(europa)).
+
+% 1.
+estaEnContinente(Jugador,Continente):-
+    ocupa(Pais,Jugador,_),
+    paisContinente(Continente,Pais).
+
+% 2.
+ocuparPaises(Jugador,CantPaisesQueOcupa):-
+    objetivo(Jugador,_),
+    findall(Pais,ocupa(Pais,Jugador,_),PaisesQueOcupa),
+    length(PaisesQueOcupa,CantPaisesQueOcupa).
+
+% 3.
+ocuparContinente(Jugador,Continente):-
+    todosLosPaisesDeUnContinente(Continente,PaisesDelContinente),
+    paisesQueOcupa(Jugador,Paises),
+    forall(member(Pais,PaisesDelContinente),member(Pais,Paises)).
+
+paisesQueOcupa(Jugador,Paises):-
+    objetivo(Jugador,_),
+    findall(Pais,ocupa(Pais,Jugador,_),Paises).
+
+todosLosPaisesDeUnContinente(Continente,PaisesDelContinente):-
+    continente(Continente),
+    findall(Pais,paisContinente(Continente,Pais),PaisesDelContinente).
+
+% 4.
+leFaltaMucho(Jugador,Continente):-
+    paisesQueOcupa(Jugador,_),
+    continente(Continente),
+    findall(Territorio,(paisContinente(Continente,Territorio),not(ocupa(Territorio,Jugador,_))),PaisesQueNoOcupa),
+    length(PaisesQueNoOcupa,X),
+    X >= 2.
+
+% 5.
+sonLimitrofes(Pais1,Pais2):-
+    limitrofes(Limitrofes),
+    member(Pais1,Limitrofes),
+    member(Pais2,Limitrofes),
+    Pais1 \= Pais2.
+
+% 6.
+esGroso(Jugador):-
+    todosLosPaisesImportantes(Importante),
+    paisesQueOcupa(Jugador,Paises),
+    forall(member(Pais,Importante),member(Pais,Paises)),
+    ocuparPaises(Jugador,X),
+    X >= 10,
+    ejercitosDelJugador(Jugador,Y),
+    Y >= 50.
+
+ejercitosDelJugador(Jugador,CantEjercitos):-
+    objetivo(Jugador,_),
+    findall(Ejercito,ocupa(_,Jugador,Ejercito),Ejercitos),
+    sumlist(Ejercitos,CantEjercitos).
+
+todosLosPaisesImportantes(Importantes):-
+    findall(Pais,paisImportante(Pais),Importantes).    
+
+% 7.
+/*estaEnElHorno(Pais):-
+    ocupa(Pais,Jugador,_),
+    todosLosPaisesLimitrofes(Pais,Limitrofes),
+    forall(member(Lugar,Limitrofes),(ocupa(Lugar,OtroJugador,_),OtroJugador \= Jugador)).
+*/
+estaEnElHorno(Pais):-
+    ocupa(Pais, Jugador, _),
+    ocupa(_,OtroJugador,_),
+    OtroJugador \= Jugador,
+    forall(sonLimitrofes(Pais, PaisLimitrofe),ocupa(PaisLimitrofe, OtroJugador, _)).
+
+todosLosPaisesLimitrofes(Pais,Limitrofes):-
+    ocupa(Pais,Jugador,_),
+    findall(Territorio,(sonLimitrofes(Pais,Territorio), ocupa(Pais,Jugador,_)),Limitrofes).
+
+% 8.
+esCaotico(Continente):-
+    continente(Continente),
+    findall(Jugador,(paisContinente(Continente,Pais),ocupa(Pais,Jugador,_)),JugadoresRepetidos),
+    list_to_set(JugadoresRepetidos,Jugadores),
+    length(Jugadores,X),
+    X > 3.
+
+% 9.
+capoCannonierre(Jugador):-
+    todosLosJugadores(Jugadores),
+    maplist(ocuparPaises,Jugadores,CantidadPaisesQueOcupancu),
+    max_member(ElMasOcupa,CantidadPaisesQueOcupancu),
+    nth1(X,CantidadPaisesQueOcupancu,ElMasOcupa),
+    nth1(X,Jugadores,Jugador).
+
+todosLosJugadores(Jugadores):-
+    findall(Jugador,ocupa(_,Jugador,_),Jugadores).
+
+% 10.
+ganadooor(Jugador):-
+    objetivo(Jugador, destruirJugador(OtroJugador)),
+    paisesQueOcupa(OtroJugador,PaisesOtroJugador),
+    paisesQueOcupa(Jugador,PaisesJugador),
+    forall(member(Pais,PaisesOtroJugador),member(Pais,PaisesJugador)).
+ganadooor(Jugador):-
+    objetivo(Jugador,ocuparContinente(Continente)),
+    ocuparContinente(Jugador,Continente).
+ganadooor(Jugador):-
+    objetivo(Jugador, ocuparPaises(Paises)),
+    paisesQueOcupa(Jugador,Paises).

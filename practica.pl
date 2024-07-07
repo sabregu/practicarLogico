@@ -322,3 +322,22 @@ complicado(Participante):-
     Capital =< 1500);
     (Nivel == basico,
     Capital < 500)).
+
+% 5.
+homogeneo(Nivel):-
+    nivelActual(_,Nivel),
+    findall(Cosa,tarea(Nivel,buscar(Cosa,_)),CosasDelNivel),
+    listaEsHomogenea(CosasDelNivel).
+
+listaEsHomogenea([]).
+listaEsHomogenea([_]).
+listaEsHomogenea([Elemento1,Elemento2|Elementos]):-
+    Elemento1 == Elemento2,
+    listaEsHomogenea(Elementos).
+
+% 6.
+poliglota(Persona):-
+    nivelActual(Persona,_),
+    findall(Idioma,habla(Persona,Idioma),Idiomas),
+    length(Idiomas,X),
+    X >= 3.
